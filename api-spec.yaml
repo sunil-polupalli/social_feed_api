@@ -1,0 +1,223 @@
+openapi: 3.0.0
+info:
+  title: Social Feed API
+  description: A scalable social media API with Fan-Out-On-Write and Redis caching.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local Development Server
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account in the system.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "alice"
+                email:
+                  type: string
+                  format: email
+                  example: "alice@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "securePass123"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully!"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      email:
+                        type: string
+        '500':
+          description: Server Error
+
+  /users/follow:
+    post:
+      summary: Follow a user
+      description: Creates a relationship where one user follows another. Transactions ensure counters are accurate.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - follower_id
+                - following_id
+              properties:
+                follower_id:
+                  type: integer
+                  example: 1
+                following_id:
+                  type: integer
+                  example: 2
+      responses:
+        '200':
+          description: Followed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Followed successfully!"
+        '400':
+          description: Bad request (e.g., following yourself)
+
+  /posts:
+    post:
+      summary: Create a post
+      description: Creates a post and triggers the "Fan-Out" process to push the ID to all followers' Redis feeds.
+      tags:
+        - Posts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - content
+              properties:
+                user_id:
+                  type: integer
+                  example: 2
+                content:
+                  type: string
+                  example: "Hello world! This post goes to Redis."
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post created and pushed to followers!"
+                  post:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      content:
+                        type: string
+
+  /posts/feed:
+    get:
+      summary: Get personalized feed
+      description: Fetches the top 10 posts from the Redis cache using Cursor-based pagination.
+      tags:
+        - Posts
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: The ID of the user requesting the feed.
+          schema:
+            type: integer
+            example: 1
+        - name: cursor
+          in: query
+          required: false
+          description: The timestamp of the last post seen (for pagination). Defaults to now.
+          schema:
+            type: string
+            example: "1700000000000"
+      responses:
+        '200':
+          description: A list of posts and the next cursor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feed:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        content:
+                          type: string
+                        username:
+                          type: string
+                        created_at:
+                          type: string
+                  nextCursor:
+                    type: string
+                    nullable: true
+                    example: "1699999900000"
+
+  /posts/{id}/like:
+    post:
+      summary: Like a post
+      description: Likes a specific post using a database transaction to update counters.
+      tags:
+        - Interactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the post to like.
+          schema:
+            type: integer
+            example: 5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: integer
+                  example: 1
+      responses:
+        '200':
+          description: Post liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post liked successfully! ❤️"
+        '400':
+          description: User already liked this post
