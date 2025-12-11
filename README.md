@@ -2,7 +2,8 @@
 
 ![Node.js](https://img.shields.io/badge/Node.js-v14+-green?style=flat&logo=node.js)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v13+-blue?style=flat&logo=postgresql)
-![Redis](https://img.shields.io/badge/Redis-v5+-red?style=flat&logo=redis)
+![Redis](https://img.shields.io/badge/Redis-v6+-red?style=flat&logo=redis)
+![Docker](https://img.shields.io/badge/Docker-Enabled-blue?style=flat&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)
 
 A high-performance backend API designed to handle **read-heavy** social media workloads. This system implements the **Fan-Out-On-Write** architecture pattern to deliver near-instant feed retrieval using **Redis Caching**, alongside **Cursor-Based Pagination** for infinite scrolling and **ACID transactions** for data integrity.
@@ -65,7 +66,7 @@ This system solves the "Celebrity Problem" and slow feed loading times by shifti
 | **Framework** | Express.js | REST API routing and middleware |
 | **Database** | PostgreSQL | Primary source of truth (Relational Data) |
 | **Cache** | Redis | In-memory store for feeds (Speed Layer) |
-| **Client Libs** | `pg`, `redis` | Database drivers |
+| **Containerization** | Docker | Containerized deployment via Docker Compose |
 
 ---
 
@@ -86,9 +87,11 @@ social-feed-api/
 │   │   └── postRoutes.js
 │   └── index.js            # Entry Point
 ├── .env.example            # Environment variables template
+├── docker-compose.yml      # Docker services configuration
+├── Dockerfile              # API container definition
 ├── init-db.js              # Database Initialization Script
 ├── schema.sql              # SQL Schema definitions
-├── package.json            # Dependencies
+├── api-spec.yaml           # OpenAPI Specification
 └── README.md               # Documentation
 ````
 
@@ -96,50 +99,46 @@ social-feed-api/
 
 ## 🚀 Getting Started
 
-### Prerequisites
+You can run this project using **Docker** (Recommended for evaluators) or **Manually** (For local development).
 
-Ensure you have the following running locally:
+### Prerequisites
 
   * [Node.js](https://nodejs.org/) (v14+)
   * [PostgreSQL](https://www.postgresql.org/) (Port 5432)
   * [Redis](https://redis.io/) (Port 6379)
+  * [Docker Desktop](https://www.docker.com/) (Optional, for Docker mode)
 
-### Installation Steps
+### Option 1: Running with Docker (Recommended)
+
+This will spin up the API, Database, and Cache containers and automatically initialize the schema.
 
 1.  **Clone the repository:**
-
     ```bash
     git clone [https://github.com/yourusername/social-feed-api.git](https://github.com/yourusername/social-feed-api.git)
     cd social-feed-api
     ```
+2.  **Start the services:**
+    ```bash
+    docker-compose up --build
+    ```
+3.  **Access the API:**
+    The server will be available at `http://localhost:3000`.
 
-2.  **Install dependencies:**
+### Option 2: Running Manually
 
+1.  **Install dependencies:**
     ```bash
     npm install
     ```
-
-3.  **Configure Environment:**
-
-      * Create a `.env` file or update `src/config/db.js` with your DB credentials.
-
-4.  **Initialize Database:**
-
-      * Run the script to create tables and indexes.
-
-    <!-- end list -->
-
+2.  **Configure Environment:**
+    Create a `.env` file based on `.env.example` or update `src/config/db.js` with your local credentials.
+3.  **Initialize Database:**
     ```bash
     node init-db.js
     ```
-
     *Output should be: `✅ Database tables created successfully!`*
-
-5.  **Run the Server:**
-
+4.  **Run the Server:**
     ```bash
-    npm run dev
-    # OR
     node src/index.js
     ```
 
@@ -147,20 +146,22 @@ Ensure you have the following running locally:
 
 ## 🔐 Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (automatically handled in Docker mode):
 
 ```ini
 PORT=3000
 DB_HOST=localhost
 DB_USER=postgres
 DB_PASSWORD=your_password
-DB_NAME=postgres
+DB_NAME=social_feed
 REDIS_URL=redis://localhost:6379
 ```
 
 -----
 
 ## 📡 API Documentation
+
+For full details, see the `api-spec.yaml` file included in this repository.
 
 ### Auth & Users
 

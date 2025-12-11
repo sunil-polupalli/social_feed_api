@@ -1,8 +1,9 @@
+require('dotenv').config();
 const redis = require('redis');
 
-// Create a Redis client
 const client = redis.createClient({
-    url: 'redis://localhost:6379' // Default URL for local Redis
+    // Logic: Try Environment Variable (Docker) OR Use Default (Local)
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
 client.on('error', (err) => console.log('Redis Client Error', err));
